@@ -20,6 +20,11 @@ passport.use(
     },
     async function (accessToken, refreshToken, profile, done) {
       try {
+        // Check if the profile contains an email
+        if (!profile.emails || !profile.emails[0] || !profile.emails[0].value) {
+          throw new Error('Email not found in the Google profile.');
+        }
+
         const userRef = await db
           .collection(process.env.USERS_DOC)
           .where('email', '==', profile.emails[0].value)
@@ -49,10 +54,13 @@ passport.use(
           newUser = { id: userRef.docs[0].id, ...userRef.docs[0].data() };
         }
 
+        // Ensure the generateAuthToken function is correctly implemented
         const token = generateAuthToken(newUser.id, newUser, '7d');
 
         return done(null, { token });
       } catch (error) {
+        // Log the error or handle it in an appropriate way
+        console.error('Error in Google OAuth strategy:', error);
         return done(error, null);
       }
     }
